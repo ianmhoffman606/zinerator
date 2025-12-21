@@ -19,7 +19,7 @@ def find_image_path(directory, base_name):
             return path
     return None
 
-def create_zine_layout(input_dir, side_margin, top_bottom_margin):
+def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=None, image_paths_override=None):
     """
     Arranges 8 photos into a standard 8-page zine layout on a single sheet.
 
@@ -64,15 +64,27 @@ def create_zine_layout(input_dir, side_margin, top_bottom_margin):
     # Create the final canvas for the zine layout
     zine_sheet = Image.new('RGB', (FINAL_WIDTH, FINAL_HEIGHT), 'white')
 
-    print(f"Searching for images in: {input_dir}")
-    image_paths = {}
     required_names = set(name for row in layout_grid for name in row)
-    for base_name in required_names:
-        path = find_image_path(input_dir, base_name)
-        if path is None:
-            print(f"Error: Image for '{base_name}.png/jpeg' not found.")
-            return
-        image_paths[base_name] = path
+
+    # If explicit image paths were provided (GUI), use them directly
+    if image_paths_override is not None:
+        image_paths = {}
+        for base_name in required_names:
+            path = image_paths_override.get(base_name)
+            if not path or not os.path.isfile(path):
+                print(f"Error: Image for '{base_name}' not found at provided path.")
+                return
+            image_paths[base_name] = path
+        print("Using provided image paths.")
+    else:
+        print(f"Searching for images in: {input_dir}")
+        image_paths = {}
+        for base_name in required_names:
+            path = find_image_path(input_dir, base_name)
+            if path is None:
+                print(f"Error: Image for '{base_name}.png/jpeg' not found.")
+                return
+            image_paths[base_name] = path
     
     print(f"All {len(required_names)} required images found.")
 
@@ -99,8 +111,14 @@ def create_zine_layout(input_dir, side_margin, top_bottom_margin):
                 print(f"Error processing image '{base_name}': {e}")
                 return
 
-    dir_name = os.path.basename(os.path.normpath(input_dir))
-    output_file = f"{dir_name}_zine_layout_printable.jpg"
+    # Decide output path and name
+    if output_dir is not None or image_paths_override is not None:
+        target_dir = output_dir if output_dir is not None else (input_dir or os.getcwd())
+        os.makedirs(target_dir, exist_ok=True)
+        output_file = os.path.join(target_dir, "zinerator_output.jpg")
+    else:
+        dir_name = os.path.basename(os.path.normpath(input_dir))
+        output_file = f"{dir_name}_zine_layout_printable.jpg"
     
     try:
         zine_sheet = zine_sheet.rotate(90, expand=True)
