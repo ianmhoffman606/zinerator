@@ -19,7 +19,7 @@ def find_image_path(directory, base_name):
             return path
     return None
 
-def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=None, image_paths_override=None):
+def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=None, image_paths_override=None, output_format="jpg"):
     """
     Arranges 8 photos into a standard 8-page zine layout on a single sheet.
 
@@ -115,14 +115,21 @@ def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=Non
     if output_dir is not None or image_paths_override is not None:
         target_dir = output_dir if output_dir is not None else (input_dir or os.getcwd())
         os.makedirs(target_dir, exist_ok=True)
-        output_file = os.path.join(target_dir, "zinerator_output.jpg")
+        ext = ".pdf" if str(output_format).lower() == "pdf" else ".jpg"
+        output_file = os.path.join(target_dir, f"zinerator_output{ext}")
     else:
         dir_name = os.path.basename(os.path.normpath(input_dir))
-        output_file = f"{dir_name}_zine_layout_printable.jpg"
+        ext = ".pdf" if str(output_format).lower() == "pdf" else ".jpg"
+        output_file = f"{dir_name}_zine_layout_printable{ext}"
     
     try:
         zine_sheet = zine_sheet.rotate(90, expand=True)
-        zine_sheet.save(output_file, quality=95)
+        fmt = str(output_format).lower()
+        if fmt == "pdf":
+            # Ensure correct mode and DPI for standard letter at 300 DPI (2550x3300)
+            zine_sheet.convert("RGB").save(output_file, "PDF", resolution=300.0)
+        else:
+            zine_sheet.save(output_file, quality=95)
         print("\nSuccess!")
         print(f"Zine layout saved to: {output_file}")
     except Exception as e:
@@ -153,6 +160,12 @@ def main():
         default=60,
         help="Margin in pixels for the top and bottom. Default: 0"
     )
+    parser.add_argument(
+        "--output-format",
+        choices=["jpg", "pdf"],
+        default="jpg",
+        help="Choose output format: 'jpg' (default) or 'pdf'."
+    )
     args = parser.parse_args()
 
     # If no input directory is provided, use the script's directory
@@ -160,7 +173,7 @@ def main():
         args.input_dir = os.path.dirname(os.path.abspath(__file__))
         print(f"No input directory specified. Using script directory: {args.input_dir}")
 
-    create_zine_layout(args.input_dir, args.side_margin, args.top_bottom_margin)
+    create_zine_layout(args.input_dir, args.side_margin, args.top_bottom_margin, output_format=args.output_format)
 
 if __name__ == "__main__":
     main()

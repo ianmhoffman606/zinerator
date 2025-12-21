@@ -100,6 +100,15 @@ class ZineratorGUI:
                bg=CONTROL_BG, fg=LABEL_FG, insertbackground=LABEL_FG,
                disabledbackground=CONTROL_BG, disabledforeground=SUBTLE_FG,
                highlightbackground=SLOT_BORDER_COLOR).pack(side=tk.LEFT, padx=5)
+
+        # Output format
+        format_frame = tk.Frame(control_frame, bg=CONTROL_BG)
+        format_frame.pack(fill=tk.X, pady=5)
+        tk.Label(format_frame, text="Output Format:", bg=CONTROL_BG, fg=LABEL_FG).pack(side=tk.LEFT)
+        self.output_format_var = tk.StringVar(value="jpg")
+        format_menu = tk.OptionMenu(format_frame, self.output_format_var, "jpg", "pdf")
+        format_menu.configure(bg=CONTROL_BG, fg=LABEL_FG, activebackground=CONTROL_BG, activeforeground=LABEL_FG, highlightthickness=0)
+        format_menu.pack(side=tk.LEFT, padx=5)
         
         # Generate button
         tk.Frame(control_frame, height=20, bg=CONTROL_BG).pack()
@@ -314,7 +323,8 @@ class ZineratorGUI:
             self.status_var.set("Canceled")
             return
         output_dir = Path(output_dir)
-        output_file = output_dir / "zinerator_output.jpg"
+        ext = ".pdf" if self.output_format_var.get().lower() == "pdf" else ".jpg"
+        output_file = output_dir / f"zinerator_output{ext}"
 
         try:
             self.status_var.set("Generating...")
@@ -328,6 +338,7 @@ class ZineratorGUI:
                 self.tb_margin_var.get(),
                 str(output_dir),
                 self.image_paths,
+                output_format=self.output_format_var.get().lower(),
             )
             
             self.status_var.set("Success!")
