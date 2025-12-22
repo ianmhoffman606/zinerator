@@ -19,7 +19,7 @@ def find_image_path(directory, base_name):
             return path
     return None
 
-def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=None, image_paths_override=None, output_format="jpg"):
+def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=None, image_paths_override=None, output_format="jpg", full_back_path=None):
     """
     Arranges 8 photos into a standard 8-page zine layout on a single sheet.
 
@@ -29,6 +29,9 @@ def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=Non
     The layout uses portrait-oriented pages. The top row is rotated 180
     degrees for correct orientation after folding. The final output is a
     high-resolution image with a landscape 11x8.5 aspect ratio for printing.
+    
+    If full_back_path is provided and output_format is PDF, a full-page back
+    cover will be appended to the PDF.
 
     """
     # Use the correct imposition layout based on folding
@@ -127,7 +130,28 @@ def create_zine_layout(input_dir, side_margin, top_bottom_margin, output_dir=Non
         fmt = str(output_format).lower()
         if fmt == "pdf":
             # Ensure correct mode and DPI for standard letter at 300 DPI (2550x3300)
-            zine_sheet.convert("RGB").save(output_file, "PDF", resolution=300.0)
+            images_to_save = [zine_sheet.convert("RGB")]
+            
+            # If full back cover provided, add it as second page
+            if full_back_path and os.path.isfile(full_back_path):
+                try:
+                    full_back_img = Image.open(full_back_path)
+                    # Convert to portrait if landscape
+                    if full_back_img.width > full_back_img.height:
+                        full_back_img = full_back_img.rotate(90, expand=True)
+                    # Resize to letter size at 300 DPI (2550x3300)
+                    full_back_img = full_back_img.resize((2550, 3300), Image.Resampling.LANCZOS)
+                    images_to_save.append(full_back_img.convert("RGB"))
+                    print("Adding full back cover as second page...")
+                except Exception as e:
+                    print(f"Warning: Could not add full back cover: {e}")
+            
+            # Save as multi-page PDF if we have multiple images, otherwise single page
+            if len(images_to_save) > 1:
+                images_to_save[0].save(output_file, "PDF", resolution=300.0, 
+                                      save_all=True, append_images=images_to_save[1:])
+            else:
+                images_to_save[0].save(output_file, "PDF", resolution=300.0)
         else:
             zine_sheet.save(output_file, quality=95)
         print("\nSuccess!")

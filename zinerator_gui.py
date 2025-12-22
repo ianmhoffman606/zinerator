@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinterdnd2 import DND_FILES, TkinterDnD
 from PIL import Image, ImageTk
-import shutil
 from pathlib import Path
 
 # ===== UI CUSTOMIZATION =====
@@ -45,7 +44,7 @@ class ZineratorGUI:
         self.image_paths = {
             'FRONT': None, 'BACK': None,
             '1': None, '2': None, '3': None, '4': None,
-            '5': None, '6': None
+            '5': None, '6': None, 'FULL_BACK': None
         }
         
         # Maintain mapping of the layout
@@ -105,7 +104,7 @@ class ZineratorGUI:
         format_frame = tk.Frame(control_frame, bg=CONTROL_BG)
         format_frame.pack(fill=tk.X, pady=5)
         tk.Label(format_frame, text="Output Format:", bg=CONTROL_BG, fg=LABEL_FG).pack(side=tk.LEFT)
-        self.output_format_var = tk.StringVar(value="jpg")
+        self.output_format_var = tk.StringVar(value="pdf")
         format_menu = tk.OptionMenu(format_frame, self.output_format_var, "jpg", "pdf")
         format_menu.configure(bg=CONTROL_BG, fg=LABEL_FG, activebackground=CONTROL_BG, activeforeground=LABEL_FG, highlightthickness=0)
         format_menu.pack(side=tk.LEFT, padx=5)
@@ -136,7 +135,42 @@ class ZineratorGUI:
         self.status_var = tk.StringVar(value="Ready")
         status_text = tk.Label(control_frame, textvariable=self.status_var, 
                       bg=CONTROL_BG, fg=STATUS_FG, wraplength=180, justify=tk.LEFT)
-        status_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        status_text.pack(padx=5, pady=5)
+        
+        # Separator
+        tk.Frame(control_frame, height=2, bg=SLOT_BORDER_COLOR).pack(fill=tk.X, pady=10)
+        
+        # Full Back Cover slot (PDF only)
+        back_cover_label = tk.Label(control_frame, text="Full Back Cover", 
+                           font=SUBTITLE_FONT, bg=CONTROL_BG, fg=LABEL_FG)
+        back_cover_label.pack(pady=(5, 2))
+        
+        pdf_note = tk.Label(control_frame, text="(PDF output only)", 
+                   font=INSTRUCTION_FONT, bg=CONTROL_BG, fg=SUBTLE_FG)
+        pdf_note.pack(pady=(0, 5))
+        
+        # Create compact back cover slot (8.5x11 aspect ratio)
+        back_slot_frame = tk.Frame(control_frame, bg=SLOT_BG, relief=SLOT_BORDER, bd=2,
+                          width=170, height=220,
+                          highlightbackground=SLOT_BORDER_COLOR,
+                          highlightcolor=SLOT_BORDER_COLOR,
+                          highlightthickness=1)
+        back_slot_frame.pack(padx=5, pady=5)
+        back_slot_frame.pack_propagate(False)
+        
+        back_image_label = tk.Label(back_slot_frame, bg=IMAGE_AREA_BG, fg=SUBTLE_FG, 
+                            text='Click or drag\nimage here')
+        back_image_label.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Bind events for back cover slot
+        back_image_label.bind('<Button-1>', lambda e: self.select_image('FULL_BACK', back_image_label))
+        back_image_label.drop_target_register(DND_FILES)
+        back_image_label.dnd_bind('<<Drop>>', lambda e: self.on_drop(e, 'FULL_BACK', back_image_label))
+        
+        # Store reference
+        if not hasattr(self, 'slot_labels'):
+            self.slot_labels = {}
+        self.slot_labels['FULL_BACK'] = back_image_label
         
         # Main canvas area for image slots
         canvas_frame = tk.Frame(self.root, bg=BG_COLOR)
@@ -244,7 +278,7 @@ class ZineratorGUI:
             
             # Update status
             loaded_count = sum(1 for path in self.image_paths.values() if path is not None)
-            self.status_var.set(f"Loaded: {loaded_count}/8")
+            self.status_var.set(f"Loaded: {loaded_count}/9")
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load image: {e}")
@@ -269,6 +303,7 @@ class ZineratorGUI:
                 img = img.rotate(90, expand=True)
             
             # Flip upside down for top row (pages 2, 1, FRONT, BACK)
+            # FULL_BACK doesn't need rotation
             if page_name in ['2', '1', 'FRONT', 'BACK']:
                 img = img.rotate(180)
             
@@ -310,8 +345,9 @@ class ZineratorGUI:
     
     def generate_zine(self):
         """Generate the zine layout"""
-        # Check if all images are loaded
-        missing = [name for name, path in self.image_paths.items() if path is None]
+        # Check if all images are loaded (FULL_BACK is optional)
+        required_pages = ['FRONT', 'BACK', '1', '2', '3', '4', '5', '6']
+        missing = [name for name in required_pages if self.image_paths.get(name) is None]
         if missing:
             messagebox.showwarning("Missing Images", 
                                   f"Please select images for: {', '.join(sorted(missing))}")
@@ -332,13 +368,18 @@ class ZineratorGUI:
             
             # Import and run the zine layout generator using the chosen paths directly
             from zinerator import create_zine_layout
+            
+            # Prepare image paths without FULL_BACK for the main layout
+            main_image_paths = {k: v for k, v in self.image_paths.items() if k != 'FULL_BACK'}
+            
             create_zine_layout(
                 None,
                 self.side_margin_var.get(),
                 self.tb_margin_var.get(),
                 str(output_dir),
-                self.image_paths,
+                main_image_paths,
                 output_format=self.output_format_var.get().lower(),
+                full_back_path=self.image_paths.get('FULL_BACK')
             )
             
             self.status_var.set("Success!")
