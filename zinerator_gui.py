@@ -36,7 +36,7 @@ INSTRUCTION_FONT = (FONT_FAMILY, 10, "italic")
 class ZineratorGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Zinerator - GUI")
+        self.root.title("Zinerator")
         self.root.geometry("1200x800")
         self.root.configure(bg=BG_COLOR)
         
@@ -64,7 +64,7 @@ class ZineratorGUI:
         title_frame = tk.Frame(self.root, bg=BG_COLOR)
         title_frame.pack(fill=tk.X, padx=20, pady=10)
         
-        title_label = tk.Label(title_frame, text="Zinerator GUI", 
+        title_label = tk.Label(title_frame, text="Zinerator - assemble your zine!", 
                       font=TITLE_FONT, bg=BG_COLOR, fg=LABEL_FG)
         title_label.pack(side=tk.LEFT)
         
