@@ -21,8 +21,9 @@ def build():
         f"--add-data={icon_path}{os.pathsep}.",
         "--onefile",
         "--windowed",
-        "--collect-all=PIL",
-        "--collect-all=PyQt6",
+        "--exclude-module=setuptools",
+        "--exclude-module=numpy",
+        "--exclude-module=distutils",
         "--clean",
     ])
     print("\nBuild complete! Executable is located in the 'dist' directory.")

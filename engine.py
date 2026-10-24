@@ -38,7 +38,7 @@ class FitMode(str, Enum):
         for member in cls:
             if member.value in s:
                 return member
-        return cls.FIT
+        return cls.STRETCH
 
 
 class OutputFormat(str, Enum):
@@ -195,7 +195,7 @@ def assemble_sheet(
     slot_paths: Dict[str, Union[str, Path]],
     side_margin: int = 60,
     top_bottom_margin: int = 60,
-    fit_mode: FitMode = FitMode.FIT,
+    fit_mode: FitMode = FitMode.STRETCH,
     progress_callback: Optional[Callable[[int, str], None]] = None
 ) -> Image.Image:
     """Assemble 8 photos into the printable 3300x2550 imposition layout sheet."""
@@ -252,7 +252,7 @@ def export_zine(
     output_path: Union[str, Path],
     output_format: OutputFormat = OutputFormat.PDF,
     full_back_path: Optional[Union[str, Path]] = None,
-    fit_mode: FitMode = FitMode.FIT,
+    fit_mode: FitMode = FitMode.STRETCH,
     progress_callback: Optional[Callable[[int, str], None]] = None
 ) -> Path:
     """Save the assembled zine layout to a print-ready PDF or JPG."""
