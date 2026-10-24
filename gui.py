@@ -522,7 +522,7 @@ class ZineratorWindow(QMainWindow):
         grid_vbox.setContentsMargins(0, 0, 0, 0)
         grid_vbox.setSpacing(8)
 
-        grid_hint = QLabel("💡 Imposition Layout: Top row folds upside down. Drag between slots to swap pages.", grid_container)
+        grid_hint = QLabel("Drag between slots to swap pages.", grid_container)
         grid_hint.setStyleSheet("color: #9ca3af; font-size: 11px; font-style: italic;")
         grid_vbox.addWidget(grid_hint)
 
@@ -635,11 +635,11 @@ class ZineratorWindow(QMainWindow):
         self.progress_bar.setVisible(False)
         act_layout.addWidget(self.progress_bar)
 
-        self.btn_preview = QPushButton("🔍 Preview Sheet", action_group)
+        self.btn_preview = QPushButton("Preview Sheet", action_group)
         self.btn_preview.clicked.connect(self.preview_sheet)
         act_layout.addWidget(self.btn_preview)
 
-        self.btn_generate = QPushButton("✨ Generate Zine", action_group)
+        self.btn_generate = QPushButton("Generate Zine", action_group)
         self.btn_generate.setObjectName("generateButton")
         self.btn_generate.clicked.connect(self.generate_zine)
         act_layout.addWidget(self.btn_generate)
